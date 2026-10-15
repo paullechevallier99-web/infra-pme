@@ -1,0 +1,37 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: factures
+      POSTGRES_USER: factures
+      POSTGRES_PASSWORD: dev
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U factures"]
+      interval: 5s
+
+  redis:
+    image: redis:7.4-alpine
+
+  api:
+    build: .
+    ports: ["127.0.0.1:8000:8000"]
+    environment: &env
+      DATABASE_URL: postgresql://factures:dev@postgres:5432/factures
+      REDIS_URL: redis://redis:6379/0
+    volumes: [factures:/data]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  worker:
+    build: .
+    command: ["python", "-m", "worker.main"]
+    environment: *env
+    volumes: [factures:/data]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+volumes:
+  factures: {}
