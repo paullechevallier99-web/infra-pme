@@ -1,0 +1,10 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+*.retry
+__pycache__/
+.venv/
+pki/*.srl
+pki/*.csr
+*.pem
+.env
