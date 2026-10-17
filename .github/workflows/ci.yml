@@ -1,0 +1,41 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dockerfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier le Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: app/Dockerfile
+
+  image:
+    needs: dockerfile
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Nom de l'image (en minuscules, obligatoire pour GHCR)
+        run: echo"IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/factures:${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+      - name: Construire
+        run: docker build -t "$IMAGE" app
+      - name: Scanner les vulnérabilités
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.65.0 image --exit-code 1 --ignore-unfixed \
+            --severity HIGH,CRITICAL "$IMAGE"
+      - name: Publier sur GHCR
+        if: github.events_name == 'push'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "{{ github.actor }}" --password-stdin
+          docker push "$IMAGE"
