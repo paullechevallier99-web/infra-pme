@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Nom de l'image (en minuscules, obligatoire pour GHCR)
-        run: echo"IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/factures:${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/factures:${GITHUB_SHA::7}" >> "$GITHUB_ENV"
       - name: Construire
         run: docker build -t "$IMAGE" app
       - name: Scanner les vulnérabilités
@@ -35,7 +35,7 @@ jobs:
             aquasec/trivy:0.65.0 image --exit-code 1 --ignore-unfixed \
             --severity HIGH,CRITICAL "$IMAGE"
       - name: Publier sur GHCR
-        if: github.events_name == 'push'
+        if: github.event_name == 'push'
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "{{ github.actor }}" --password-stdin
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           docker push "$IMAGE"
