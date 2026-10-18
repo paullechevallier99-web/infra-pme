@@ -1,0 +1,34 @@
+- name: Vérifier le résultat du rôle common
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Lire la configuration SSH réellement appliquée
+      ansible.builtin.command: sshd -T
+      register: common_sshd_config
+      changed_when: false
+
+    - name: Les mots de passe et la connexion root sont refusés
+      ansible.builtin.assert:
+        that:
+          - "'passwordauthentication no' in common_sshd_config.stdout"
+          - "'permitrootlogin no' in common_sshd_config.stdout"
+
+    - name: Lire la configuration des mises à jour automatiques
+      ansible.builtin.command: cat /etc/apt/apt.conf.d/20auto-upgrades
+      register: common_auto_upgrades
+      changed_when: false
+
+    - name: Les mises à jour de sécurité automatiques sont actives
+      ansible.builtin.assert:
+        that: "'Unattended-Upgrade \"1\"' in common_auto_upgrades.stdout"
+
+    - name: Chercher le compte jury
+      ansible.builtin.command: id jury
+      register: common_jury_account
+      changed_when: false
+      failed_when: false
+
+    - name: Le compte jury n'existe pas quand il est désactivé
+      ansible.builtin.assert:
+        that: common_jury_account.rc != 0

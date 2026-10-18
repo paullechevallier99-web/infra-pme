@@ -1,0 +1,5 @@
+common_firewall_rules:
+  - { port: "443", src: "{{ lan_network }}" }      #postes
+  - { port: "80", src: "{{ lan_network }}" }
+  - { port: "9100", src: "{{ ips.obs }}" }    #node_exporter
+
