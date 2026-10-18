@@ -1,0 +1,2 @@
+common_firewall_rules:
+  - { port: "9100", src: "{{ ips.obs }}" }  # node_exporter

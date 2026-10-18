@@ -1,0 +1,9 @@
+- name: Appliquer le rôle common
+  hosts: all
+  become: true
+  vars:
+    admin_ip: 127.0.0.1
+    jury_enabled: false
+    common_manage_firewall: false
+  roles:
+    - role: common

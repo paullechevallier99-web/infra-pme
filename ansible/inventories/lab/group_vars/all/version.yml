@@ -1,0 +1,24 @@
+# renovate: datasource=docker depName=redis
+redis_version: "7.4-alpine"
+#renovate: datasource=docker depName=vaultwarden/server
+vaultwarden_version: "1.37.4"
+# renovate: datasource=docker depName=dxflrs/garage
+garage_version: "v2.1.0"
+# renovate: datasource=docker depName=prom/prometheus
+prometheus_version: "v3.5.0"
+# renovate: datasource=docker depName=prom/alertmanager
+alertmanager_version: "v0.28.1"
+# renovate: datasource=docker depName=prom/blackbox-exporter
+blackbox_version: "v0.27.0"
+# renovate: datasource=docker depName=grafana/grafana
+grafana_version: "12.1.0"
+# renovate: datasource=docker depName=grafana/loki
+loki_version: "3.5.3"
+# renovate: datasource=docker depName=grafana/alloy
+alloy_version: "v1.10.0"
+# renovate: datasource=docker depName=quay.io/prometheus/node-exporter
+node_exporter_version: "v1.9.1"
+# renovate: datasource=docker depName=gcr.io/cadvisor/cadvisor
+cadvisor_version: "v0.52.1"
+factures_version: "main"
+

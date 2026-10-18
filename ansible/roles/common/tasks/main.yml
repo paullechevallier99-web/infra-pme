@@ -1,0 +1,94 @@
+- name: Installer les paquets de base
+  ansible.builtin.apt:
+    name: "{{ common_base_packages }}"
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Activer les mises à jour de sécurité automatiques
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+    mode: "0644"
+
+- name: Conserver les journaux système après redémarrage
+  ansible.builtin.file:
+    path: /var/log/journal
+    state: directory
+    mode: "2755"
+
+- name: Durcir la configuration SSH
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/10-hardening.conf
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      X11Forwarding no
+      MaxAuthTries 3
+      LoginGraceTime 30
+      AllowUsers ops{{ ' jury' if jury_enabled | default(false) else '' }}
+    mode: "0644"
+  notify: Redémarrer ssh
+
+- name: Vérifier que la configuration SSH est valide
+  ansible.builtin.command: sshd -t
+  changed_when: false
+
+- name: Pare-feu
+  when: common_manage_firewall
+  block:
+    - name: Autoriser SSH depuis la VM admin uniquement
+      community.general.ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+        src: "{{ admin_ip }}"
+
+    - name: Règles propres au rôle de la machine
+      community.general.ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: tcp
+        src: "{{ item.src }}"
+      loop: "{{ common_firewall_rules }}"
+
+    - name: Activer le pare-feu, entrant refusé par défaut
+      community.general.ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+
+- name: Créer le compte jury
+  when: jury_enabled | default(false)
+  block:
+    - name: Utilisateur jury
+      ansible.builtin.user:
+        name: jury
+        groups: sudo
+        append: true
+        shell: /bin/bash
+    - name: Clé SSH du jury
+      ansible.posix.authorized_key:
+        user: jury
+        key: "{{ lookup('ansible.builtin.file', playbook_dir + '/../files/jury.pub') }}"
+    - name: Droits administrateur du jury
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/jury
+        content: "jury ALL=(ALL) NOPASSWD:ALL\n"
+        mode: "0440"
+        validate: visudo -cf ùs
+
+- name: Supprimer le compte jury
+  when: not (jury_enabled | default(false))
+  block:
+    - name: Retier l'utilisateur jury
+      ansible.builtin.user:
+        name: jury
+        state: absent
+        remove: true
+    - name: Retirer ses droits
+      ansible.builtin.file:
+        path: /etc/sudoers.d/jury
+        state: absent

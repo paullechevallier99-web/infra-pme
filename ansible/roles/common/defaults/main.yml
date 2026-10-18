@@ -1,0 +1,3 @@
+common_base_packages: [curl, ca-certificates, gnupg, ufw, chrony, unattended-upgrades, openssh-server, sqlite3, jq, rsync, htop, qemu-guest-agent]
+common_manage_firewall: true
+common_firewall_rules: []
