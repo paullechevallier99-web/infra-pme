@@ -1,0 +1,41 @@
+- name: Installer les prérequis du dépôt Docker
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - python3-debian
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Ajouter le dépôt Docker officiel
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: [deb]
+    uris: https://download.docker.com/linux/debian
+    suites: ["{{ ansible_facts['distribution_release'] }}"]
+    components: [stable]
+    architectures: [amd64]
+    signed_by: https://download.docker.com/linux/debian/gpg
+    state: present
+  notify: Rafraîchir la liste des paquets
+
+- name: Appliquer tout de suite le rafraichissemnt si le dépôt vient d'être ajouté
+  ansible.builtin.meta: flush_handlers
+
+- name: Installer Docker Engine et le plugin Compose
+  ansible.builtin.apt:
+    name: [docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin]
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Configurer le démon Docker
+  ansible.builtin.template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+    mode: "0644"
+  notify: Redémarrer docker
+
+- name: Démarrer Docker et l'activer au démarrage
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true

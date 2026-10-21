@@ -1,0 +1,13 @@
+{
+  "log-driver": "json-file",
+  "log-opts": { "max-size": "10m", "max-file": "3" },
+  {% if proxy_url is defined %}
+    "proxies": {
+      "http-proxy": "{{ proxy_url }}",
+      "https-proxy": "{{ proxy_url }}",
+      "no-proxy": "localhost,127.0.0.1,{{ vm_network }},.lab.internal"
+  },
+  {% endif %}
+    "live-restore": true
+}
+
