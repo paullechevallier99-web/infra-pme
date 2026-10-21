@@ -1,0 +1,5 @@
+- name: Appliquer le rôle docker
+  hosts: all
+  become: true
+  roles:
+    - role: docker

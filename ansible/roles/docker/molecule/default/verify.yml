@@ -1,0 +1,34 @@
+- name: Vérifier le résultat du rôle docker
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Collecter l'état des services
+      ansible.builtin.service_facts:
+
+    - name: Le service Docker tourne
+      ansible.builtin.assert:
+        that: ansible_facts.services['docker.service'].state == "running"
+
+    - name: Vérifier le plugin Compose
+      ansible.builtin.command: docker compose version
+      register: docker_compose_version
+      changed_when: false
+
+    - name: Lancer un conteneur de test
+      ansible.builtin.command: docker run --rm hello-world
+      register: docker_hello
+      changed_when: false
+
+    - name: Le conteneur de test a fonctionné
+      ansible.builtin.assert:
+        that: "'Hello from Docker!' in docker_hello.stdout"
+
+    - name: Lire la configuration du démon
+      ansible.builtin.slurp:
+        src: /etc/docker/daemon.json
+      register: docker_daemon_config
+
+    - name: La taille des journaux est limitée
+      ansible.builtin.assert:
+        that: "'max-size' in (docker_daemon_config.content | b64decode)"
