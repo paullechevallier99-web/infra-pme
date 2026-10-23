@@ -1,0 +1,13 @@
+- name: Appliquer les rôles docker et edge
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/../../inventories/lab/group_vars/all/versions.yml"
+  vars:
+    domain: lab.internal
+    ips: { apps: 192.168.60.20, obs: 192.168.60.30 }
+    edge_listen_ip: 127.0.0.1
+    edge_pki_dir: "{{ lookup('env','MOLECULE_PROJECT_DIRECTORY') }}/../../../pki"
+  roles:
+    - role: docker
+    - role: edge

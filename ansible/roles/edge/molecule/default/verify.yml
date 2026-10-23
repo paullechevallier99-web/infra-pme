@@ -1,0 +1,45 @@
+- name: Vérifier le résultat du rôle edge
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Attendre que Traefik écoute en HTTPS
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 443
+        timeout: 60
+
+    - name: Tester la redirection de HTTP vers HTTPS
+      ansible.builtin.uri:
+        url: http://127.0.0.1/
+        follow_redirects: none
+        status_code: [301, 302, 307, 308]
+      register: edge_redirect
+
+    - name: La redirection mène vers HTTPS
+      ansible.builtin.assert:
+        that: edge_redirect.location is match('^https://')
+
+    - name: Lire le certificat présenté par Traefik
+      ansible.builtin.shell: |
+        set -o pipefail
+        openssl s_client -connect 127.0.0.1:443 -servername vault.lab.internal </dev/null 2>/dev/null \
+          | openssl x509 -noout -ext subjectAltName
+      args:
+        executable: /bin/bash
+      register: edge_certificate
+      changed_when: false
+
+    - name: Traefik présente le certificat de la PKI interne
+      ansible.builtin.assert:
+        that: "'*.lab.internal' in edge_certificate.stdout"
+
+    - name: Lire les métriques de Traefik
+      ansible.builtin.uri:
+        url: http://127.0.01:8082/metrics
+        return_content: true
+      register: edge_metrics
+
+    - name: Les métriques Prometheus sont exposées
+      ansible.builtin.assert:
+        that: "'traefik_' in edge_metrics.content"

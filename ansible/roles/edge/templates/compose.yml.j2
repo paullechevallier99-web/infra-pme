@@ -1,0 +1,16 @@
+name: edge
+services:
+  traefik:
+    image: traefik:{{ traefik_version }}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "{{ edge_listen_ip }}:8082:8082"
+    volumes:
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./dynamic:/etc/traefik/dynamic:ro
+      - ./certs:/certs:ro
+      - ./logs:/var/log/traefik
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
