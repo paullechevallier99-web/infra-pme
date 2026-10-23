@@ -1,0 +1,4 @@
+# Adresse sur laquelle publier le port des métriques (IP privée de la VM)
+edge_listen_ip: "{{ ansible_host | default(inventory_hostname) }}"
+# Dossier de la PKI, relatif au dossier des playbooks
+edge_pki_dir: "{{ playbook_dir }}/../../pki"

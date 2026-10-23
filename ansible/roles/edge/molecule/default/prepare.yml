@@ -1,0 +1,8 @@
+- name: Préparer le conteneur de test
+  hosts: all
+  become: true
+  tasks:
+    - name: Installer les outils de vérification
+      ansible.builtin.apt:
+        name: [openssl]
+        update_cache: true

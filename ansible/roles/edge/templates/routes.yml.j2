@@ -1,0 +1,45 @@
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/wildcard.crt
+        keyFile: /certs/wildcard.key
+
+http:
+  middlewares:
+    secure-headers:
+      headers:
+        stsSeconds: 31536000
+        contentTypeNosniff: true
+        referrerPolicy: no-referrer
+
+  routers:
+    vault:
+      rule: Host(`vault.{{ domain }}`)
+      entryPoints: [websecure]
+      service: vault
+      middlewares: [secure-headers]
+      tls: {}
+    factures:
+      rule: Host(`factures.{{ domain }}`)
+      entryPoints: [websecure]
+      service: factures
+      middlewares: [secure-headers]
+      tls: {}
+    grafana:
+      rule: Host(`grafana.{{ domain }}`)
+      entryPoints: [websecure]
+      service: grafana
+      middlewares: [secure-headers]
+      tls: {}
+
+  services:
+    vault:
+      loadBalancer:
+        servers: [{ url: "http://{{ ips.apps }}:8081" }]
+    factures:
+      loadBalancer:
+        servers: [{ url: "http://{{ ips.apps }}:8000" }]
+    grafana:
+      loadBalancer:
+        servers: [{ url: "http://{{ ips.obs }}:3000" }]
