@@ -1,0 +1,6 @@
+# Adresse sur laquelle publier les ports (l'IP privée de la VM)
+apps_listen_ip: "{{ ansible_host | default(inventory_hostname) }}"
+# Dossier de l'application dans le dépôt, relatif au dossier des playbooks
+apps_app_dir: "{{ playbook_dir }}/../../app"
+# Inscription Vaultwarden : true seulement le temps de créer les comptes
+apps_vaultwarden_signups_allowed: false

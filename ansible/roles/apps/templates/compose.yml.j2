@@ -1,0 +1,88 @@
+name: apps
+networks:
+  edge: {}
+  data:
+    internal: true
+
+volumes:
+  pgdata: {}
+  redisdata: {}
+
+x-app-env: &app-env
+  DATABASE_URL: "host=postgres port=5432 dbname=factures user=factures password={{ vault_postgres_password }}"
+  REDIS_URL: "redis://redis:6379/0"
+  STORAGE_DIR: /data
+
+services:
+  postgres:
+    image: postgres:{{ postgres_version }}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: factures
+      POSTGRES_USER: factures
+      POSTGRES_PASSWORD: "{{ vault_postgres_password }}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U factures"]
+      interval: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits: { memory: 512M }
+
+  redis:
+    image: redis:{{ redis_version }}
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: [redisdata:/data]
+    networks: [data]
+    deploy:
+      resources:
+        limits: { memory: 128M }
+
+  api:
+    image: ghcr.io/{{ github_user }}/factures:{{ factures_version }}
+    restart: unless-stopped
+    environment: *app-env
+    volumes: [/srv/factures:/data]
+    networks: [edge, data]
+    ports: ["{{ apps_listen_ip }}:8000:8000"]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_started }
+    deploy:
+      resources:
+        limits: { memory: 256M }
+
+  worker:
+    image: ghcr.io/{{ github_user }}/factures:{{ factures_version }}
+    restart: unless-stopped
+    command: ["python", "-m", "worker.main"]
+    environment: *app-env
+    volumes: [/srv/factures:/data]
+    networks: [edge, data]
+    ports: ["{{ apps_listen_ip }}:9200:9200"]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  vaultwarden:
+    image: vaultwarden/server:{{ vaultwarden_version }}
+    restart: unless-stopped
+    environment:
+      DOMAIN: "https://vault.{{ domain }}"
+      SIGNUPS_ALLOWED: "{{ apps_vaultwarden_signups_allowed | string | lower }}"
+      ADMIN_TOKEN: "{{ vault_vaultwarden_admin_token | replace('$', '$$') }}"
+    volumes: [/srv/vaultwarden:/data]
+    networks: [edge]
+    ports: ["{{ apps_listen_ip }}:8081:80"]
