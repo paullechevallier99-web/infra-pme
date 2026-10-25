@@ -1,0 +1,29 @@
+- name: Créer les répertoires de la stack et des données
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('root') }}"
+    mode: "0750"
+  loop:
+    - { path: /opt/apps }
+    - { path: /srv/vaultwarden}
+    - { path: /srv/factures, owner: "10001" }
+
+- name: Déposer le fichier Compose (il contient des secrets)
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: /opt/apps/compose.yml
+    mode: "0600"
+
+- name: Déposer le shéma de la base
+  ansible.builtin.copy:
+    src: "{{ apps_app_dir }}/init.sql"
+    dest: /opt/apps/init.sql
+    mode: "0644"
+
+- name: Lancer la stack et attendre que tout soit prêt
+  community.docker.docker_compose_v2:
+    project_src: /opt/apps
+    state: present
+    wait: true
+    wait_timeout: 180

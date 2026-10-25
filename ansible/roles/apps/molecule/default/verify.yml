@@ -1,0 +1,57 @@
+- name: Vérifier le résultat du rôle apps
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: L'API répond et joint la base et Redis
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8000/healthz
+      register: apps_health
+      retries: 10
+      delay: 3
+      until: apps_health.status == 200
+
+    - name: Vaultwarden répond
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8081/alive
+      register: apps_vaultwarden
+      retries: 10
+      delay: 3
+      until: apps_vaultwarden.status == 200
+
+    - name: Déposer une facture de test
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8000/factures
+        method: POST
+        body_format: form-multipart
+        body:
+          file:
+            content: "%PDF-1.4 facture de test"
+            filename: test.pdf
+            mime_type: application/pdf
+        status_code: 202
+      register: apps_upload
+
+    - name: Attendre que le worker ait traité la facture
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:8000/factures/{{ apps_upload.json.id }}"
+      register: apps_invoice
+      retries: 10
+      delay: 2
+      until: apps_invoice.json.status == "done"
+
+    - name: Lire l'utilisateur qui fait tourner l'API
+      ansible.builtin.command: docker compose -f /opt/apps/compose.yml exec -T api id -u
+      register: apps_api_uid
+      changed_when: false
+
+    - name: L'API tourne sans les droits root
+      ansible.builtin.assert:
+        that: apps_api_uid.stdout == "10001"
+
+    - name: PostgreSQL n'est pas exposé sur la machine
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 5432
+        state: stopped
+        timeout: 3

@@ -1,0 +1,14 @@
+- name: Appliquer les rôles docker et apps
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/../../inventories/lab/group_vars/all/versions.yml"
+    - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/../../inventories/lab/group_vars/all/vault.yml"
+  vars:
+    domain: lab.internal
+    github_user: paullechevallier99-web
+    apps_listen_ip: 127.0.0.1
+    apps_app_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/../../../app"
+  roles:
+    - role: docker
+    - role: apps
