@@ -1,0 +1,12 @@
+- name: Appliquer les rôles docker et garage
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/../../inventories/lab/group_vars/all/versions.yml"
+  vars:
+    # Secrets factices uniquement pour le test
+    vault_garage_rpc_secret: "{{ '0' * 64 }}"
+    vault_garage_admin_token: "jeton-de-test"
+  roles:
+    - role: docker
+    - role: garage
