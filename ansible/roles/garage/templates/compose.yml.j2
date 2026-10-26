@@ -1,0 +1,11 @@
+name: backup
+services:
+  garage:
+    image: dxflrs/garage:{{ garage_version }}
+    container_name: garage
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./garage.toml:/etc/garage.toml:ro
+      - /srv/garage/meta:/var/lib/garage/meta
+      - /srv/garage/data:/var/lib/garage/data

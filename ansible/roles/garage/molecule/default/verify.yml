@@ -1,0 +1,45 @@
+- name: Vérifier le résultat du rôle garage
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Attendre que l'API S3 écoute
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 3900
+        timeout: 60
+
+    - name: Interroger l'API S3 sans identifiants
+      ansible.builtin.uri:
+        url: http://127.0.0.1:3900/
+        status_code: [400, 403]
+        return_content: true
+      register: garage_s3
+
+    - name: L'API S3 refuse un accès sans identifiants
+      ansible.builtin.assert:
+        that: "'<Error>' in garage_s3.content"
+
+    - name: Lire les métriques de Garage
+      ansible.builtin.uri:
+        url: http://127.0.0.1:3903/metrics
+        return_content: true
+      register: garage_metrics
+
+    - name: Les métriques Prometheus sont exposées
+      ansible.builtin.assert:
+        that: "'garage_' in garage_metrics.content"
+
+    - name: Interroger Garage avec son outil en ligne de commande
+      ansible.builtin.command: docker exec garage /garage status
+      register: garage_status
+      changed_when: false
+
+    - name: Lire les droits du fichier de configuration
+      ansible.builtin.stat:
+        path: /opt/backup/garage.toml
+      register: garage_config
+
+    - name: Le fichier de configuration n'est lisible que par root
+      ansible.builtin.assert:
+        that: garage_config.stat.mode == "0600"

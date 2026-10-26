@@ -3,7 +3,7 @@ redis_version: "7.4-alpine"
 #renovate: datasource=docker depName=vaultwarden/server
 vaultwarden_version: "1.36.0"
 # renovate: datasource=docker depName=dxflrs/garage
-garage_version: "v2.1.0"
+garage_version: "v2.5.0"
 # renovate: datasource=docker depName=prom/prometheus
 prometheus_version: "v3.5.0"
 # renovate: datasource=docker depName=prom/alertmanager
