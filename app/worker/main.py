@@ -1,37 +1,51 @@
 import hashlib
 import os
+import time
+
 import psycopg
 import redis
 from prometheus_client import Counter, Gauge, start_http_server
 
 DB_DSN = os.environ["DATABASE_URL"]
 STORAGE = os.environ.get("STORAGE_DIR", "/data")
-queue = redis.Redis.from_url(os.environ["REDIS_URL"])
+# Délai de lecture (15 s) plus long que l'attente de brpop (5 s) :
+# la bibliothèque n'abandonne jamais pendant une attente normale.
+queue = redis.Redis.from_url(
+    os.environ["REDIS_URL"], socket_timeout=15, health_check_interval=30
+)
 
 PROCESSED = Counter("factures_processed_total", "Factures traitées", ["status"])
 QUEUE_LEN = Gauge("factures_queue_length", "Factures en attente de traitement")
 
+
 def process(fid: str) -> None:
-	with open(os.path.join(STORAGE, f"{fid}.pdf"), "rb") as f:
-		data = f.read()
-	with psycopg.connect(DB_DSN, autocommit=True) as conn:
-		conn.execute(
-			"UPDATE factures SET status = 'done', sha256 = %s, size_bytes = %s, "
-			"processed_at = now() WHERE id = %s",
-			(hashlib.sha256(data).hexdigest(), len(data), fid),
-		)
+    with open(os.path.join(STORAGE, f"{fid}.pdf"), "rb") as f:
+        data = f.read()
+    with psycopg.connect(DB_DSN, autocommit=True) as conn:
+        conn.execute(
+            "UPDATE factures SET status = 'done', sha256 = %s, size_bytes = %s, "
+            "processed_at = now() WHERE id = %s",
+            (hashlib.sha256(data).hexdigest(), len(data), fid),
+        )
+
 
 if __name__ == "__main__":
-	start_http_server(9200)
-	while True:
-		QUEUE_LEN.set(queue.llen("factures:queue"))
-		item = queue.brpop("factures:queue", timeout=5)
-		if item is None:
-			continue
-		fid = item[1].decode()
-		try:
-			process(fid)
-			PROCESSED.labels("ok").inc()
-		except Exception as exc: # journalisé, compté, visible dans Grafana
-			PROCESSED.labels("error").inc()
-			print(f"erreur sur {fid}: {exc}", flush=True)
+    start_http_server(9200)
+    while True:
+        try:
+            QUEUE_LEN.set(queue.llen("factures:queue"))
+            item = queue.brpop("factures:queue", timeout=5)
+        except redis.exceptions.RedisError as exc:
+            # Un incident Redis passager ne doit pas faire planter le worker
+            print(f"Redis indisponible : {exc}, nouvelle tentative dans 5 s", flush=True)
+            time.sleep(5)
+            continue
+        if item is None:
+            continue
+        fid = item[1].decode()
+        try:
+            process(fid)
+            PROCESSED.labels("ok").inc()
+        except Exception as exc:  # journalisé, compté, visible dans Grafana
+            PROCESSED.labels("error").inc()
+            print(f"erreur sur {fid}: {exc}", flush=True)
