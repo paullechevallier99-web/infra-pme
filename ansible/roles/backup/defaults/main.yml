@@ -1,0 +1,12 @@
+# Adresse de l'API S3 de Garage (sur la VM backup)
+backup_s3_endpoint: "http://{{ ips.backup }}:3900"
+backup_bucket: restic
+# Planification : sauvegarde chaque nuit, test de restauration chaque dimanche
+backup_schedule: "*-*-* 02:30:00"
+backup_restore_test_schedule: "Sun *-*-* 04:00:00"
+# Rétention : 7 sauvegardes quotidiennes, 4 hebdomadaires, 6 mensuelles
+backup_keep_daily: 7
+backup_keep_weekly: 4
+backup_keep_monthly: 6
+# Dossier lu par node_exporter pour publier les métriques
+backup_textfile_dir: /var/lib/node_exporter/textfile

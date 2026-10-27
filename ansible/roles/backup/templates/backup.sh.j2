@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Sauvegarde quotidienne : PostgreSQL, Vaultwarden, factures -> Garage (chiffré par restic)
+set -euo pipefail
+set -a; . /etc/restic/env; set +a
+
+STAGING=/var/backups/staging
+TEXTFILE={{ backup_textfile_dir }}/backup.prom
+start=$(date +%s)
+
+# 1. Dump PostgreSQL cohérent (format custom, compressé)
+docker compose -f /opt/apps/compose.yml exec -T postgres \
+  pg_dump -U factures -Fc factures > "$STAGING/factures.dump"
+
+# 2. Copie cohérente de la base SQLite de Vaultwarden, sans arrêter le service
+sqlite3 /srv/vaultwarden/db.sqlite3 ".backup '$STAGING/vaultwarden.sqlite3'"
+
+# 3. Sauvegarde chiffrée et dédupliquée
+restic backup --tag nightly "$STAGING" /srv/vaultwarden /srv/factures \
+  --exclude '/srv/vaultwarden/db.sqlite3*'
+
+# 4. Rétention, puis vérification d'un échantillon des données
+restic forget --tag nightly --keep-daily {{ backup_keep_daily }} \
+  --keep-weekly {{ backup_keep_weekly }} --keep-monthly {{ backup_keep_monthly }} --prune
+restic check --read-data-subset=5%
+
+# 5. Métriques pour Prometheus, écrites seulement si tout a réussi
+end=$(date +%s)
+cat > "$TEXTFILE.tmp" <<EOF
+# HELP backup_last_success_timestamp_seconds Fin de la dernière sauvegarde réussie
+# TYPE backup_last_success_timestamp_seconds gauge
+backup_last_success_timestamp_seconds $end
+# HELP backup_duration_seconds Durée de la dernière sauvegarde
+# TYPE backup_duration_seconds gauge
+backup_duration_seconds $((end - start))
+EOF
+mv "$TEXTFILE.tmp" "$TEXTFILE"

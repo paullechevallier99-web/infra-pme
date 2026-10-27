@@ -1,0 +1,9 @@
+[Unit]
+Description=Planification du test de restauration
+
+[Timer]
+OnCalendar={{ backup_restore_test_schedule }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

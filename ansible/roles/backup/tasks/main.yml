@@ -1,0 +1,61 @@
+- name: Installer restic et les outils de sauvegarde
+  ansible.builtin.apt:
+    name: [restic, sqlite3, rsync]
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Créer les répertoires
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: /etc/restic, mode: "0700" }
+    - { path: /var/backups/staging, mode: "0700" }
+    - { path: "{{ backup_textfile_dir }}", mode: "0755" }
+
+- name: Déposer les identifiants de restic (ils contiennent des secrets)
+  ansible.builtin.template:
+    src: restic.env.j2
+    dest: /etc/restic/env
+    mode: "0600"
+
+- name: Initialiser le dépôt restic s'il n'existe pas encore
+  ansible.builtin.shell: |
+    set -a; . /etc/restic/env; set +a
+    if restic cat config >/dev/null 2>&1; then
+      echo "Dépôt déjà initialisé"
+    else
+      restic init
+    fi
+  args:
+    executable: /bin/bash
+  register: backup_restic_init
+  changed_when: "'created restic repository' in backup_restic_init.stdout"
+
+- name: Déposer les scripts
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/usr/local/bin/{{ item }}"
+    mode: "0750"
+  loop: [backup.sh, restore-test.sh, restore-prod.sh]
+
+- name: Déposer les unités systemd
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+    mode: "0644"
+  loop:
+    - restic-backup.service
+    - restic-backup.timer
+    - restic-restore-test.service
+    - restic-restore-test.timer
+  notify: Recharger systemd
+
+- name: Activer les minuteries
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+  loop: [restic-backup.timer, restic-restore-test.timer]
