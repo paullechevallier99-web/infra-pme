@@ -1,0 +1,7 @@
+[Unit]
+Description=Test de restauration restic
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/restore-test.sh

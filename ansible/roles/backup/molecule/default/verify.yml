@@ -1,0 +1,41 @@
+- name: Vérifier le résultat du rôle backup
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Les minuteries sont activées
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        enabled: true
+      check_mode: true
+      register: backup_timers
+      failed_when: backup_timers.changed
+      loop: [restic-backup.timer, restic-restore-test.timer]
+
+    - name: Lancer une sauvegarde
+      ansible.builtin.systemd_service:
+        name: restic-backup.service
+        state: started
+
+    - name: Lire la métrique de la sauvegarde
+      ansible.builtin.slurp:
+        src: /var/lib/node_exporter/textfile/backup.prom
+      register: backup_metric
+
+    - name: La sauvegarde a réussi et l'a signalé
+      ansible.builtin.assert:
+        that: "'backup_last_success_timestamp_seconds' in (backup_metric.content | b64decode)"
+
+    - name: Lancer le test de restauration
+      ansible.builtin.systemd_service:
+        name: restic-restore-test.service
+        state: started
+
+    - name: Lire la métrique du test de restauration
+      ansible.builtin.slurp:
+        src: /var/lib/node_exporter/textfile/restore.prom
+      register: backup_restore_metric
+
+    - name: La sauvegarde est réellement restaurable
+      ansible.builtin.assert:
+        that: "'restore_last_success_timestamp_seconds' in (backup_restore_metric.content | b64decode)"

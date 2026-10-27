@@ -1,0 +1,62 @@
+- name: Préparer la machine de test avec Garage et la stack apps
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/../../inventories/lab/group_vars/all/versions.yml"
+  vars:
+    domain: lab.internal
+    github_user: paullechevallier99-web
+    apps_listen_ip: 127.0.0.1
+    apps_app_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/../../../app"
+    # Secrets factices, uniquement pour le test
+    vault_garage_rpc_secret: "{{ '0' * 64 }}"
+    vault_garage_admin_token: "jeton-de-test"
+    vault_postgres_password: "motdepasse-de-test"
+    vault_vaultwarden_admin_token: "jeton-de-test"
+  roles:
+    - role: docker
+    - role: garage
+    - role: apps
+
+- name: Initialiser Garage (mêmes étapes que le runbook)
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Lire l'identifiant du noeud Garage
+      ansible.builtin.command: docker exec garage /garage node id -q
+      register: backup_test_garage_node
+      changed_when: false
+      retries: 10
+      delay: 3
+      until: backup_test_garage_node.rc == 0
+
+    - name: Déclarer le noeud, créer le seau et la clé de test
+      ansible.builtin.shell: |
+        set -e
+        docker exec garage /garage layout assign -z dc1 -c 5G {{ backup_test_garage_node.stdout.split('@')[0] }}
+        docker exec garage /garage layout apply --version 1
+        docker exec garage /garage bucket create restic
+        docker exec garage /garage key create restic-key > /root/backup_garage-test-key.txt
+        docker exec garage /garage bucket allow --read --write --owner restic --key restic-key
+      args:
+        executable: /bin/bash
+        creates: /root/backup_garage-test-key.txt
+
+- name: Appliquer le rôle backup
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/../../inventories/lab/group_vars/all/versions.yml"
+  vars:
+    vault_restic_password: "motdepasse-restic-de-test"
+    backup_s3_endpoint: "http://127.0.0.1:3900"
+    vault_restic_s3_key_id: "{{ backup_test_garage_key.content | b64decode | regex_search('Key ID:\\s+(\\S+)', '\\1') | first }}"
+    vault_restic_s3_secret: "{{ backup_test_garage_key.content | b64decode | regex_search('Secret key:\\s+(\\S+)', '\\1') | first }}"
+  pre_tasks:
+    - name: Lire la clé de test créée dans Garage
+      ansible.builtin.slurp:
+        src: /root/backup_garage-test-key.txt
+      register: backup_test_garage_key
+  roles:
+    - role: backup

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Restaure la dernière sauvegarde dans un espace jetable et vérifie qu'elle est exploitable
+set -euo pipefail
+set -a; . /etc/restic/env; set +a
+
+WORK=$(mktemp -d)
+PG=restore-test-pg
+TEXTFILE={{ backup_textfile_dir }}/restore.prom
+trap 'rm -rf "$WORK"; docker rm -f "$PG" >/dev/null 2>&1 || true' EXIT
+
+restic restore latest --tag nightly --target "$WORK"
+DUMPS="$WORK/var/backups/staging"
+
+# Vaultwarden : contrôle d'intégrité de la base SQLite
+test "$(sqlite3 "$DUMPS/vaultwarden.sqlite3" 'PRAGMA integrity_check;')" = "ok"
+
+# PostgreSQL : restauration dans un conteneur éphémère
+docker run -d --name "$PG" -e POSTGRES_PASSWORD=test \
+  -v "$DUMPS:/restore:ro" postgres:{{ postgres_version }} >/dev/null
+until [ "$(docker logs "$PG" 2>&1 | grep -c 'ready to accept connections')" -ge 2 ]; do
+  sleep 2
+done
+docker exec "$PG" createdb -U postgres factures
+docker exec "$PG" pg_restore -U postgres -d factures --no-owner --no-acl /restore/factures.dump
+rows=$(docker exec "$PG" psql -U postgres -d factures -tAc "SELECT count(*) FROM factures")
+
+echo "Restauration valide : $rows factures"
+cat > "$TEXTFILE.tmp" <<EOF
+# HELP restore_last_success_timestamp_seconds Dernier test de restauration réussi
+# TYPE restore_last_success_timestamp_seconds gauge
+restore_last_success_timestamp_seconds $(date +%s)
+# HELP restore_rows_factures Nombre de factures présentes dans la sauvegarde testée
+# TYPE restore_rows_factures gauge
+restore_rows_factures $rows
+EOF
+mv "$TEXTFILE.tmp" "$TEXTFILE"

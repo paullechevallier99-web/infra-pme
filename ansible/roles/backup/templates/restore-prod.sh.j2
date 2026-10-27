@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Usage : restore-prod.sh [ID_SNAPSHOT]   (par défaut : dernier snapshot "nightly")
+set -euo pipefail
+set -a; . /etc/restic/env; set +a
+SNAPSHOT="${1:-latest}"
+
+WORK=$(mktemp -d)
+trap 'rm -rf "$WORK"' EXIT
+restic restore "$SNAPSHOT" --tag nightly --target "$WORK"
+DUMPS="$WORK/var/backups/staging"
+
+cd /opt/apps
+docker compose stop api worker vaultwarden
+
+rsync -a --delete "$WORK/srv/vaultwarden/" /srv/vaultwarden/
+rm -f /srv/vaultwarden/db.sqlite3-wal /srv/vaultwarden/db.sqlite3-shm
+cp "$DUMPS/vaultwarden.sqlite3" /srv/vaultwarden/db.sqlite3
+rsync -a "$WORK/srv/factures/" /srv/factures/
+chown -R 10001 /srv/factures
+
+docker compose exec -T postgres pg_restore -U factures -d factures \
+  --clean --if-exists --no-owner < "$DUMPS/factures.dump"
+
+docker compose start api worker vaultwarden
+echo "Restauration terminée depuis le snapshot $SNAPSHOT"
