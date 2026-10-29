@@ -11,7 +11,7 @@ jobs:
   dockerfile:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Vérifier le Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
@@ -24,7 +24,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Nom de l'image (en minuscules, obligatoire pour GHCR)
         run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/factures:${GITHUB_SHA::7}" >> "$GITHUB_ENV"
       - name: Construire
@@ -46,9 +46,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
