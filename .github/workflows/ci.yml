@@ -73,3 +73,18 @@ jobs:
           V=$(grep '^prometheus_version' ansible/inventories/lab/group_vars/all/versions.yml | cut -d'"' -f2)
           docker run --rm -v "$PWD/ansible/roles/observability/files/rules:/r:ro" \
             --entrypoint promtool "prom/prometheus:$V" check rules /r/alerts.yml
+
+      - name: Installer Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "4.0.1"
+
+      - name: Vérifier la mise en forme de Terraform
+        working-directory: terraform
+        run: terraform fmt -check -recursive
+
+      - name: Valider la configuration Terraform
+        working-directory: terraform
+        run: |
+          terraform init -backend=false
+          terraform validate
