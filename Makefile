@@ -29,3 +29,14 @@ test: ## Lance les tests Molecule de tous les rôles (long)
 	set -e; for r in common docker edge apps garage backup agents observability; do \
 	  (cd ansible/roles/$$r && molecule test); \
 	done
+
+
+plan: ## Montre les VM que Terraform créerait ou modifierait
+	cd terraform && terraform plan
+
+up: ## Crée ou met à jour les VM
+	cd terraform && terraform apply
+
+rebuild: ## Détruit et recrée edge, apps et obs, puis les reconfigure (jamais backup)
+	cd terraform && terraform apply $(foreach vm,$(REBUILDABLE),-replace='proxmox_virtual_environment_vm.vm["$(vm)"]')
+	$(MAKE) deploy
