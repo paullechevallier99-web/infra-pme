@@ -15,11 +15,11 @@ grafana_version: "12.1.0"
 # renovate: datasource=docker depName=grafana/loki
 loki_version: "3.5.3"
 # renovate: datasource=docker depName=grafana/alloy
-alloy_version: "v1.10.0"
+alloy_version: "v1.21.1"
 # renovate: datasource=docker depName=quay.io/prometheus/node-exporter
-node_exporter_version: "v1.9.1"
+node_exporter_version: "v1.12.1"
 # renovate: datasource=docker depName=gcr.io/cadvisor/cadvisor
-cadvisor_version: "v0.52.1"
+cadvisor_version: "v0.55.1"
 factures_version: "f839fdc"
 # renovate: datasource=docker depName=postgres
 postgres_version: "16-alpine"
