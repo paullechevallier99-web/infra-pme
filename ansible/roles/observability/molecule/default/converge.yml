@@ -1,0 +1,16 @@
+- name: Appliquer les rôles docker et observability
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/../../inventories/lab/group_vars/all/versions.yml"
+  vars:
+    domain: lab.internal
+    ips: { edge: 127.0.0.1, apps: 127.0.0.1, obs: 127.0.0.1, backup: 127.0.0.1 }
+    observability_listen_ip: 127.0.0.1
+    observability_pki_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/../../../pki"
+    # Secrets factices, uniquement pour le test
+    vault_grafana_admin_password: "motdepasse-de-test"
+    vault_discord_webhook: ""
+  roles:
+    - role: docker
+    - role: observability

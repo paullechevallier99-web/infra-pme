@@ -1,0 +1,13 @@
+route:
+  receiver: principal
+  group_by: [alertname, host]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: principal
+{% if observability_discord_webhook is match('https://') %}
+    discord_configs:
+      - webhook_url: "{{ observability_discord_webhook }}"
+{% endif %}

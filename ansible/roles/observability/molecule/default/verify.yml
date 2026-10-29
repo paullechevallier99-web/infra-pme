@@ -1,0 +1,74 @@
+- name: Vérifier le résultat du rôle observability
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Attendre que Prometheus soit prêt
+      ansible.builtin.uri:
+        url: http://127.0.0.1:9090/-/ready
+      register: observability_prometheus_ready
+      retries: 20
+      delay: 3
+      until: observability_prometheus_ready.status == 200
+
+    - name: Lire les règles d'alerte chargées par Prometheus
+      ansible.builtin.uri:
+        url: http://127.0.0.1:9090/api/v1/rules
+        return_content: true
+      register: observability_rules
+
+    - name: Les règles d'alerte sont chargées
+      ansible.builtin.assert:
+        that:
+          - "'BackupTooOld' in observability_rules.content"
+          - "'ContainerRestarting' in observability_rules.content"
+
+    - name: Attendre que Loki soit prêt
+      ansible.builtin.uri:
+        url: http://127.0.0.1:3100/ready
+      register: observability_loki_ready
+      retries: 30
+      delay: 3
+      until: observability_loki_ready.status == 200
+
+    - name: Lire les sources de données de Grafana
+      ansible.builtin.uri:
+        url: http://127.0.0.1:3000/api/datasources
+        url_username: admin
+        url_password: motdepasse-de-test
+        force_basic_auth: true
+        return_content: true
+      register: observability_datasources
+      retries: 20
+      delay: 3
+      until: observability_datasources.status == 200
+
+    - name: Grafana a créé ses sources de données
+      ansible.builtin.assert:
+        that:
+          - "'prometheus' in observability_datasources.content"
+          - "'loki' in observability_datasources.content"
+
+    - name: Rechercher le tableau de bord dans Grafana
+      ansible.builtin.uri:
+        url: http://127.0.0.1:3000/api/search?type=dash-db
+        url_username: admin
+        url_password: motdepasse-de-test
+        force_basic_auth: true
+        return_content: true
+      register: observability_dashboards
+
+    - name: Le tableau de bord versionné est chargé
+      ansible.builtin.assert:
+        that: "'vue-ensemble' in observability_dashboards.content"
+
+    - name: Lister les services qui tournent
+      ansible.builtin.command: docker compose -f /opt/obs/compose.yml ps --status running --services
+      register: observability_running
+      changed_when: false
+
+    - name: Alertmanager et Blackbox tournent
+      ansible.builtin.assert:
+        that:
+          - "'alertmanager' in observability_running.stdout"
+          - "'blackbox' in observability_running.stdout"
