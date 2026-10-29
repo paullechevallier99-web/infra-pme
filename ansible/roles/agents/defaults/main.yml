@@ -1,0 +1,4 @@
+# Adresse sur laquelle publier les ports de cAdvisor et d'Alloy (l'ip privée de la VM)
+agents_listen_ip: "{{ ansible_host | default(inventory_hostname) }}"
+# Adresse de Loki, sur la VM obs, où Alloy envoie les journaux
+agents_loki_url: "http://{{ ips.obs }}:3100/loki/api/v1/push"

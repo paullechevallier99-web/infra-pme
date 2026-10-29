@@ -1,0 +1,4 @@
+- name: Redémarrer les agents
+  community.docker.docker_compose_v2:
+    project_src: /opt/agents
+    state: restarted

@@ -1,0 +1,46 @@
+- name: Vérifier le résultat du rôle agents
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Écrire une métrique de test dans le dossier textfile
+      ansible.builtin.copy:
+        dest: /var/lib/node_exporter/textfile/test.prom
+        content: "agents_test_metric 1\n"
+        mode: "0644"
+
+    - name: Lire les métriques de node_exporter
+      ansible.builtin.uri:
+        url: http://127.0.0.1:9100/metrics
+        return_content: true
+      register: agents_node_metrics
+      retries: 10
+      delay: 3
+      until: agents_node_metrics.status == 200
+
+    - name: Le service node_exporter publie les métriques de la machine et celles du dossier textfile
+      ansible.builtin.assert:
+        that:
+          - "'node_cpu_seconds_total' in agents_node_metrics.content"
+          - "'agents_test_metric' in agents_node_metrics.content"
+
+    - name: Lire les métriques de cAdvisor
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8080/metrics
+        return_content: true
+      register: agents_cadvisor_metrics
+      retries: 10
+      delay: 3
+      until: agents_cadvisor_metrics.status == 200
+
+    - name: Le service cAdvisor publie les métriques des conteneurs
+      ansible.builtin.assert:
+        that: "'container_cpu_usage_seconds_total' in agents_cadvisor_metrics.content"
+
+    - name: Alloy a chargé sa configuration et il est prêt
+      ansible.builtin.uri:
+        url: http://127.0.0.1:12345/-/ready
+      register: agents_alloy_ready
+      retries: 10
+      delay: 3
+      until: agents_alloy_ready.status == 200

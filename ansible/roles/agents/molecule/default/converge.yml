@@ -1,0 +1,11 @@
+- name: Appliquer les rôles docker et agents
+  hosts: all
+  become: true
+  vars_files:
+    - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/../../inventories/lab/group_vars/all/versions.yml"
+  vars:
+    ips: { obs: 192.168.60.30 }
+    agents_listen_ip: 127.0.0.1
+  roles:
+    - role: docker
+    - role: agents
