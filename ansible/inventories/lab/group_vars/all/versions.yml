@@ -13,7 +13,7 @@ blackbox_version: "v0.27.0"
 # renovate: datasource=docker depName=grafana/grafana
 grafana_version: "13.3.0"
 # renovate: datasource=docker depName=grafana/loki
-loki_version: "3.7.6"
+loki_version: "3.7.9"
 # renovate: datasource=docker depName=grafana/alloy
 alloy_version: "v1.21.1"
 # renovate: datasource=docker depName=quay.io/prometheus/node-exporter
