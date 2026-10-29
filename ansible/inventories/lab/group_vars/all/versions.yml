@@ -15,7 +15,7 @@ grafana_version: "13.3.0"
 # renovate: datasource=docker depName=grafana/loki
 loki_version: "3.7.6"
 # renovate: datasource=docker depName=grafana/alloy
-alloy_version: "v1.21.1"
+alloy_version: "v1.21.3"
 # renovate: datasource=docker depName=quay.io/prometheus/node-exporter
 node_exporter_version: "v1.12.1"
 # renovate: datasource=docker depName=gcr.io/cadvisor/cadvisor
