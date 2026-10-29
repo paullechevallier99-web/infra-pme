@@ -3,9 +3,9 @@ ansible_ssh_private_key_file: ~/.ssh/homelab
 ansible_python_interpreter: /usr/bin/python3
 
 domain: lab.internal
-admin_ip: 192.168.60.5       #La VM admin: la seule source autorisée pour SSH
-lan_network: 10.10.0.0/16    #réseau du poste dans la salle
-vm_network: 192.168.60.0/24  #sous réseau attribué aux VM 
+admin_ip: 192.168.60.5       # La VM admin: la seule source autorisée pour SSH
+lan_network: 10.10.0.0/16    # réseau du poste dans la salle
+vm_network: 192.168.60.0/24  # sous réseau attribué aux VM
 github_user: paullechevallier99-web
 
 ips:
