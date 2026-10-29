@@ -8,3 +8,5 @@ pki/*.srl
 pki/*.csr
 *.pem
 .env
+/app/test.pdf
+*.swp
