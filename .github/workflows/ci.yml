@@ -39,3 +39,37 @@ jobs:
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           docker push "$IMAGE"
+
+  infrastructure:
+    name: Analyse de l'infrastructure
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer les outils d'analyse
+        run: pip install ansible-core ansible-lint yamllint
+
+      - name: Installer les collections Ansible
+        run: ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: Créer un mot de passe factice pour le coffre
+        run: mkdir -p ~/.ansible && echo factice > ~/.ansible/vault_pass_homelab
+
+      - name: Vérifier les fichiers YAML
+        run: yamllint -d relaxed .
+
+      - name: Analyser les rôles et le playbook
+        working-directory: ansible
+        run: ansible-lint
+
+      - name: Vérifier les règles d'alerte Prometheus
+        run: |
+          V=$(grep '^prometheus_version' ansible/inventories/lab/group_vars/all/versions.yml | cut -d'"' -f2)
+          docker run --rm -v "$PWD/ansible/roles/observability/files/rules:/r:ro" \
+            --entrypoint promtool "prom/prometheus:$V" check rules /r/alerts.yml
