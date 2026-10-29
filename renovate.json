@@ -25,6 +25,12 @@
       "matchDepNames": ["postgres"],
       "matchUpdateTypes": ["major"],
       "enabled": false
+    },
+    {
+      "description": "Une nouvelle version de Python peut casser Ansible et les bibliothèques : elle attend ton accord",
+      "matchDepNames": ["python"],
+      "matchUpdateTypes": ["major", "minor"],
+      "dependencyDashboardApproval": true
     }
   ]
 }
