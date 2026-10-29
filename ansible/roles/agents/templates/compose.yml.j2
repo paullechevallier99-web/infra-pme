@@ -1,0 +1,44 @@
+name: agents
+volumes:
+  alloy-data: {}
+services:
+  node-exporter:
+    image: prom/node-exporter:{{ node_exporter_version }}
+    restart: unless-stopped
+    command:
+      - --path.rootfs=/host
+      - --collector.textfile.directory=/textfile
+    network_mode: host
+    pid: host
+    volumes:
+      - /:/host:ro
+      - /var/lib/node_exporter/textfile:/textfile:ro
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:{{ cadvisor_version }}
+    restart: unless-stopped
+    privileged: true
+    devices: [/dev/kmsg]
+    ports: ["{{ agents_listen_ip }}:8080:8080"]
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+
+  alloy:
+    image: grafana/alloy:{{ alloy_version }}
+    restart: unless-stopped
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    ports: ["{{ agents_listen_ip }}:12345:12345"]
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log/journal:/var/log/journal:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      - alloy-data:/var/lib/alloy/data

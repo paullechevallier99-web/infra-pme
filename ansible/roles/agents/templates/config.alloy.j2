@@ -1,0 +1,33 @@
+// Journaux des conteneurs Docker
+discovery.docker "containers" {
+  host ="unix:///var/run/docker.sock"
+}
+
+discovery.relabel "containers" {
+  targets = []
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+}
+
+loki.source.docker "containers" {
+  host          = "unix:///var/run/docker.sock"
+  targets       = discovery.docker.containers.targets
+  relabel_rules = discovery.relabel.containers.rules
+  labels        = { host = "{{ inventory_hostname }}", source = "docker" }
+  forward_to    = [loki.write.default.receiver]
+}
+
+// Journal système (SSH, sauvegardes, noyau...)
+loki.source.journal "system" {
+  labels     = { host = "{{ inventory_hostname }}", source = "journal" }
+  forward_to = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+  endpoint {
+    url = "{{ agents_loki_url }}"
+  }
+}

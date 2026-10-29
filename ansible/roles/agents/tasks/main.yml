@@ -1,0 +1,19 @@
+- name: Créer les répertoires
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop: [/opt/agents, /var/lib/node_exporter/textfile]
+
+- name: Déposer les fichiers de la stack
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/opt/agents/{{ item }}"
+    mode: "0644"
+  loop: [compose.yml, config.alloy]
+  notify: Redémarrer les agents
+
+- name: Lancer la stack
+  community.docker.docker_compose_v2:
+    project_src: /opt/agents
+    state: present
