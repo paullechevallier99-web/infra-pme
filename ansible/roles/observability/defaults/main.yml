@@ -1,0 +1,14 @@
+# Adresse sur laquelle publier les ports (l'IP privée de la VM)
+observability_listen_ip: "{{ ansible_host | default(inventory_hostname) }}"
+# Durées de conservation des métriques et des journaux
+observability_prometheus_retention: 15d
+observability_loki_retention: 168h
+# Pages testées en HTTPS par Blackbox, comme le ferait un utilisateur
+observability_probe_targets:
+  - "https://vault.{{ domain }}/alive"
+  - "https://factures.{{ domain }}/healthz"
+  - "https://grafana.{{ domain }}/api/health"
+# Dossier de la PKI, pour le certificat de la CA interne
+observability_pki_dir: "{{ playbook_dir }}/../../pki"
+# Adresse Discord des alertes ; vide = alertes non envoyées
+observability_discord_webhook: "{{ vault_discord_webhook | default('') }}"

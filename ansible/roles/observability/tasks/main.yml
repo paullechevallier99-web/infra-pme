@@ -1,0 +1,46 @@
+- name: Créer l'arborescence de la stack
+  ansible.builtin.file:
+    path: "/opt/obs/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - ""
+    - prometheus
+    - prometheus/rules
+    - grafana
+
+- name: Déposer les configurations
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "/opt/obs/{{ item.dest }}"
+    owner: "{{ item.owner | default('root') }}"
+    mode: "{{ item.mode | default('0644') }}"
+  loop:
+    - { src: compose.yml.j2, dest: compose.yml, mode: "0600" }
+    - { src: prometheus.yml.j2, dest: prometheus/prometheus.yml }
+    - { src: alertmanager.yml.j2, dest: alertmanager.yml, owner: "65534", mode: "0600" }
+    - { src: blackbox.yml.j2, dest: blackbox.yml }
+    - { src: loki.yml.j2, dest: loki.yml }
+  notify: Redémarrer la supervision
+
+- name: Déposer les règles d'alerte et la configuration de Grafana
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "/opt/obs/{{ item.dest }}"
+    mode: "0644"
+    directory_mode: "0755"
+  loop:
+    - { src: rules/, dest: prometheus/rules/ }
+    - { src: grafana/, dest: grafana/ }
+  notify: Redémarrer la supervision
+
+- name: Déposer le certificat de la CA interne, pour Blackbox
+  ansible.builtin.copy:
+    src: "{{ observability_pki_dir }}/ca.crt"
+    dest: /opt/obs/ca.crt
+    mode: "0644"
+
+- name: Lancer la stack
+  community.docker.docker_compose_v2:
+    project_src: /opt/obs
+    state: present

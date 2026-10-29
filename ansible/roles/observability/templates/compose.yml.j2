@@ -1,0 +1,57 @@
+name: obs
+volumes:
+  prometheus-data: {}
+  grafana-data: {}
+  loki-data: {}
+services:
+  prometheus:
+    image: prom/prometheus:{{ prometheus_version }}
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time={{ observability_prometheus_retention }}
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    ports: ["{{ observability_listen_ip }}:9090:9090"]
+
+  alertmanager:
+    image: prom/alertmanager:{{ alertmanager_version }}
+    restart: unless-stopped
+    command: ["--config.file=/etc/alertmanager/alertmanager.yml"]
+    volumes: ["./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro"]
+
+  blackbox:
+    image: prom/blackbox-exporter:{{ blackbox_version }}
+    restart: unless-stopped
+    command: ["--config.file=/etc/blackbox/blackbox.yml"]
+    volumes:
+      - ./blackbox.yml:/etc/blackbox/blackbox.yml:ro
+      - ./ca.crt:/certs/ca.crt:ro
+    extra_hosts:
+      - "vault.{{ domain }}:{{ ips.edge }}"
+      - "factures.{{ domain }}:{{ ips.edge }}"
+      - "grafana.{{ domain }}:{{ ips.edge }}"
+
+  loki:
+    image: grafana/loki:{{ loki_version }}
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/config.yml"]
+    volumes:
+      - ./loki.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
+    ports: ["{{ observability_listen_ip }}:3100:3100"]
+
+  grafana:
+    image: grafana/grafana:{{ grafana_version }}
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "{{ vault_grafana_admin_password }}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: "https://grafana.{{ domain }}"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports: ["{{ observability_listen_ip }}:3000:3000"]

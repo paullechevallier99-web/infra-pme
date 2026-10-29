@@ -1,0 +1,35 @@
+{
+  "title": "Vue d'ensemble",
+  "uid": "vue-ensemble",
+  "schemaVersion": 39,
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Âge de la dernière sauvegarde (heures)",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "(time() - backup_last_success_timestamp_seconds) / 3600" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Services joignables en HTTPS",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "probe_success", "legendFormat": "{{instance}}" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Machines supervisées",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "up{job=\"node\"}", "legendFormat": "{{host}}" }
+      ]
+    }
+  ]
+}
