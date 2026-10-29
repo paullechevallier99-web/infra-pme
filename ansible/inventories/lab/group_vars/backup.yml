@@ -1,4 +1,4 @@
 common_firewall_rules:
-  - { port: "3900", src: "{{ ips.apps }}" }    #API S3 pour restic
+  - { port: "3900", src: "{{ ips.apps }}" }    # API S3 pour restic
   - { port: "3903", src: "{{ ips.obs }}" }     # métriques Garage
   - { port: "9100", src: "{{ ips.obs }}" }     # node_exporter

@@ -1,5 +1,5 @@
 common_firewall_rules:
-  - { port: "3100", src: "{{ vm_network }}" }  #Loki: réception des logs des VM
+  - { port: "3100", src: "{{ vm_network }}" }  # Loki: réception des logs des VM
   - { port: "3000", src: "{{ ips.edge }}" }    # Grafana via Traefik
   - { port: "9090", src: "{{ admin_ip }}" }    # Prometheus depuis admin
   - { port: "9100", src: "{{ ip.obs }}" }      # node_exporter
