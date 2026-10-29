@@ -10,3 +10,4 @@ pki/*.csr
 .env
 /app/test.pdf
 *.swp
+*.pdf

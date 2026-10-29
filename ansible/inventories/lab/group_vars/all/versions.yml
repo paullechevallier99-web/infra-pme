@@ -24,4 +24,4 @@ cadvisor_version: "v0.55.1"
 traefik_version: "v3.7.16"
 # renovate: datasource=docker depName=postgres
 postgres_version: "16-alpine"
-factures_version: "f839fdc"
+factures_version: "2b7cc45"
