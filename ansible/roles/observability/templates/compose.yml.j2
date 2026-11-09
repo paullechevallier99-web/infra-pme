@@ -3,6 +3,11 @@ volumes:
   prometheus-data: {}
   grafana-data: {}
   loki-data: {}
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: {{ observability_docker_subnet }}
 services:
   prometheus:
     image: prom/prometheus:{{ prometheus_version }}
