@@ -78,7 +78,7 @@
         dest: /etc/sudoers.d/jury
         content: "jury ALL=(ALL) NOPASSWD:ALL\n"
         mode: "0440"
-        validate: visudo -cf ùs
+        validate: visudo -cf %s
 
 - name: Supprimer le compte jury
   when: not (jury_enabled | default(false))
