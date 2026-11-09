@@ -22,4 +22,5 @@ docker compose exec -T postgres pg_restore -U factures -d factures \
   --clean --if-exists --no-owner < "$DUMPS/factures.dump"
 
 docker compose start api worker vaultwarden
-echo "Restauration terminée depuis le snapshot $SNAPSHOT"
+rows=$(docker compose exec -T postgres psql -U factures -d factures -tAc "SELECT count(*) FROM factures")
+echo "Restauration terminée depuis le snapshot $SNAPSHOT : $rows factures dans la base"
