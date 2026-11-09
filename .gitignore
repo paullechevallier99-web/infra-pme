@@ -13,3 +13,4 @@ pki/*.csr
 /app/test.pdf
 *.swp
 *.pdf
+*.save

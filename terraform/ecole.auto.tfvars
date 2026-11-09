@@ -1,17 +1,17 @@
 # Valeurs d'exemple : à remplacer par celles de docs/environnement-ecole.md
-proxmox_endpoint = "https://pve.bts.lan:8006/"
-node_name        = "pve2"
-pool_id          = "sio2-paul"
-template_id      = 9013
+proxmox_endpoint = "https://172.31.114.1:8006/"
+node_name        = "pve-3"
+pool_id          = "paul.l"
+template_id      = 120
 datastore_id     = "local-lvm"
-bridge           = "vmbr0"
-vlan_id          = 60
-gateway          = "192.168.60.254"
-dns_servers      = ["192.168.60.254"]
+bridge           = "vmbr1"
+vlan_id          = 19
+gateway          = "172.31.19.254"
+dns_servers      = ["9.9.9.9"]
 
 vms = {
-  edge   = { id = 2310, ip = "192.168.60.10", cpu = 1, mem = 1024, disk = 10 }
-  apps   = { id = 2320, ip = "192.168.60.20", cpu = 2, mem = 2048, disk = 20 }
-  obs    = { id = 2330, ip = "192.168.60.30", cpu = 2, mem = 2048, disk = 20 }
-  backup = { id = 2340, ip = "192.168.60.40", cpu = 1, mem = 1024, disk = 40 }
+  edge   = { id = 996, ip = "172.31.19.2", cpu = 1, mem = 1024, disk = 10 }
+  apps   = { id = 997, ip = "172.31.19.3", cpu = 2, mem = 2048, disk = 20 }
+  obs    = { id = 998, ip = "172.31.19.4", cpu = 2, mem = 2048, disk = 20 }
+  backup = { id = 999, ip = "172.31.19.5", cpu = 1, mem = 1024, disk = 40 }
 }

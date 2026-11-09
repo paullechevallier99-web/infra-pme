@@ -1,4 +1,5 @@
-.PHONY: help lint check plan-deploy deploy-initial deploy backup restore-test test
+REBUILDABLE = edge apps obs
+.PHONY: help lint check plan-deploy deploy-initial deploy backup restore-test test plan up rebuild
 
 help: ## Affiche cette aide
 	@grep -E '^[a-z-]+:.*## ' Makefile | sed 's/:.*## /\t/'
