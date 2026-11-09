@@ -18,7 +18,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
   # L'agent invité est installé par Ansible : Terraform ne l'attend pas
   agent {
-    enabled = false
+    enabled = true
   }
 
   cpu {
@@ -27,6 +27,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
   memory {
     dedicated = each.value.mem
+    floating = each.value.mem
   }
 
   disk {
