@@ -1,5 +1,7 @@
+observability_docker_subnet: 10.89.0.0/24 # réseau Docker de la stack obs
+
 common_firewall_rules:
-  - { port: "3100", src: "{{ vm_network }}" }  # Loki: réception des logs des VM
-  - { port: "3000", src: "{{ ips.edge }}" }    # Grafana via Traefik
-  - { port: "9090", src: "{{ admin_ip }}" }    # Prometheus depuis admin
-  - { port: "9100", src: "{{ ips.obs }}" }      # node_exporter
+  - { port: "3100", src: "{{ vm_network }}" }                      # Loki: réception des logs des VM
+  - { port: "3000", src: "{{ ips.edge }}" }                        # Grafana via Traefik
+  - { port: "9090", src: "{{ admin_ip }}" }                        # Prometheus depuis admin
+  - { port: "9100", src: "{{ observability_docker_subnet }}" }     # node_exporter
