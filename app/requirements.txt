@@ -1,6 +1,7 @@
 fastapi==0.162.2
 prometheus_client==0.26.0
 psycopg[binary]==3.3.8
+pypdf==6.21.3
 python-multipart==0.0.32
 redis==8.1.0
 starlette==1.10.0

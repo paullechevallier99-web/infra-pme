@@ -17,6 +17,22 @@ jobs:
         with:
           dockerfile: app/Dockerfile
 
+  tests:
+    name: Tests de l'application
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Installer les dépendances
+        run: pip install -r app/requirements.txt pytest==9.2.0 reportlab==5.1.0
+      - name: Lancer les tests
+        working-directory: app
+        run: python -m pytest -q tests
+
   image:
     needs: dockerfile
     runs-on: ubuntu-24.04
