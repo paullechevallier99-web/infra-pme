@@ -10,7 +10,7 @@
       ansible.builtin.command: cloud-init status --wait
       register: cloud_init_status
       changed_when: false
-      failed_when: cloud_init_status.rc not in [0,2]
+      failed_when: cloud_init_status.rc not in [0, 2]
 
 - name: Socle commun sur toutes les VM
   hosts: all
