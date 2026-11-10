@@ -6,3 +6,9 @@
   ansible.builtin.service:
     name: docker
     state: restarted
+
+- name: Appliquer le filtrage DOCKER-USER
+  ansible.builtin.systemd_service:
+    name: docker-user-filter.service
+    state: restarted
+    daemon_reload: true

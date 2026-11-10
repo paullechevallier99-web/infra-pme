@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Géré par Ansible : filtrage des ports publiés par Docker (chaîne DOCKER-USER)
+# Usage : docker-user-filter.sh start|stop
+set -euo pipefail
+
+IFACE="{{ ansible_default_ipv4.interface }}"
+CHAIN=INFRA-DOCKER
+
+retirer_le_saut() {
+  while iptables -D DOCKER-USER -i "$IFACE" -j "$CHAIN" 2>/dev/null; do :; done
+}
+
+if [ "${1:-start}" = "stop" ]; then
+  retirer_le_saut
+  exit 0
+fi
+
+iptables -N "$CHAIN" 2>/dev/null || true
+iptables -F "$CHAIN"
+iptables -A "$CHAIN" -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN
+{% for r in docker_user_allowed %}
+iptables -A "$CHAIN" -p tcp -s {{ r.src }} -m conntrack --ctorigdstport {{ r.port }} --ctdir ORIGINAL -j RETURN   # {{ r.comment | default('') }}
+{% endfor %}
+iptables -A "$CHAIN" -j DROP
+
+iptables -N DOCKER-USER 2>/dev/null || true
+retirer_le_saut
+iptables -I DOCKER-USER 1 -i "$IFACE" -j "$CHAIN"
