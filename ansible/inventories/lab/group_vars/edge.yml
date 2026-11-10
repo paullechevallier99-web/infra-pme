@@ -2,3 +2,12 @@ common_firewall_rules:
   - { port: "443", src: "{{ lan_network }}" }      # postes
   - { port: "80", src: "{{ lan_network }}" }
   - { port: "9100", src: "{{ ips.obs }}" }    # node_exporter
+
+docker_user_filter: true
+docker_user_allowed:
+  - { port: 443, src: "{{ lan_network }}", comment: "HTTPS : postes et VM" }
+  - { port: 80, src: "{{ lan_network }}", comment: "HTTP, redirigé vers HTTPS" }
+  - { port: 443, src: "10.102.100.0/22", comment: "HTTPS : réseau Infra" }
+  - { port: 80, src: "10.102.100.0/22", comment: "HTTP : réseau Infra" }
+  - { port: 8082, src: "{{ ips.obs }}", comment: "métriques Traefik" }
+  - { port: 8080, src: "{{ ips.obs }}", comment: "cAdvisor" }

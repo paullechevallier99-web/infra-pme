@@ -3,7 +3,7 @@
 # Usage : docker-user-filter.sh start|stop
 set -euo pipefail
 
-IFACE="{{ ansible_default_ipv4.interface }}"
+IFACE="{{ ansible_facts["default_ipv4"]["interface"] }}"
 CHAIN=INFRA-DOCKER
 
 retirer_le_saut() {
