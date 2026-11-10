@@ -21,6 +21,38 @@
     dest: /opt/apps/init.sql
     mode: "0644"
 
+- name: Déposer les migrations de la base
+  ansible.builtin.copy:
+    src: "{{ apps_app_dir }}/migrations/"
+    dest: /opt/apps/migrations/
+    mode: "0644"
+
+- name: Démarrer PostgreSQL seul, avant les migrations
+  community.docker.docker_compose_v2:
+    project_src: /opt/apps
+    services: [postgres]
+    state: present
+    wait: true
+    wait_timeout: 120
+
+- name: Appliquer les migrations (idempotentes, rejouées à chaque déploiement)
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for f in /opt/apps/migrations/*.sql; do
+      docker compose -f /opt/apps/compose.yml exec -T postgres \
+        psql -U factures -d factures -v ON_ERROR_STOP=1 -q < "$f"
+    done
+    docker compose -f /opt/apps/compose.yml exec -T postgres \
+      psql -U factures -d factures -tAc "SELECT string_agg(version, ',' ORDER BY version) FROM schema_migrations"
+  args:
+    executable: /bin/bash
+  register: apps_migrations
+  changed_when: false
+
+- name: Afficher les migrations appliquées
+  ansible.builtin.debug:
+    msg: "Migrations en base : {{ apps_migrations.stdout }}"
+
 - name: Lancer la stack et attendre que tout soit prêt
   community.docker.docker_compose_v2:
     project_src: /opt/apps
