@@ -5,6 +5,8 @@ import uuid
 import psycopg
 import redis
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from prometheus_client import Counter, Histogram, make_asgi_app
 
 DB_DSN = os.environ["DATABASE_URL"]
@@ -18,6 +20,10 @@ LATENCY = Histogram("factures_upload_seconds", "Durée de traitement d'un dépô
 CHAMPS = ["id", "filename", "status", "sha256", "size_bytes", "classement", "siret",
           "date_facture", "montant_ttc", "numero", "chemin", "created_at"]
 COLONNES = ", ".join(CHAMPS)
+
+PAGE = open(os.path.join(os.path.dirname(__file__), "static", "bibliotheque.html"), encoding="utf-8").read()
+
+PAGE = open(os.path.join(os.path.dirname(__file__), "static", "bibliotheque.html"), encoding="utf-8").read()
 
 app = FastAPI(title="factures-api")
 app.mount("/metrics", make_asgi_app())
@@ -101,3 +107,53 @@ def reanalyser(fid: uuid.UUID):
             raise HTTPException(404, "Facture inconnue")
     queue.lpush("factures:queue", str(fid))
     return {"id": str(fid), "status": "requeued"}
+
+
+@app.get("/", include_in_schema=False)
+def accueil():
+    return RedirectResponse("/bibliotheque")
+
+
+@app.get("/bibliotheque", response_class=HTMLResponse, include_in_schema=False)
+def bibliotheque():
+    return PAGE
+
+
+@app.get("/factures/{fid}/pdf")
+def telecharger(fid: uuid.UUID):
+    with db() as conn:
+        row = conn.execute("SELECT chemin, filename FROM factures WHERE id = %s", (fid,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Facture inconnue")
+    chemin, nom = row
+    racine = os.path.realpath(STORAGE)
+    fichier = os.path.realpath(os.path.join(racine, chemin or f"{fid}.pdf"))
+    if not fichier.startswith(racine + os.sep) or not os.path.isfile(fichier):
+        raise HTTPException(404, "Fichier introuvable")
+    return FileResponse(fichier, media_type="application/pdf", filename=nom or f"{fid}.pdf",
+                        content_disposition_type="inline")
+
+
+@app.get("/", include_in_schema=False)
+def accueil():
+    return RedirectResponse("/bibliotheque")
+
+
+@app.get("/bibliotheque", response_class=HTMLResponse, include_in_schema=False)
+def bibliotheque():
+    return PAGE
+
+
+@app.get("/factures/{fid}/pdf")
+def telecharger(fid: uuid.UUID):
+    with db() as conn:
+        row = conn.execute("SELECT chemin, filename FROM factures WHERE id = %s", (fid,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "Facture inconnue")
+    chemin, nom = row
+    racine = os.path.realpath(STORAGE)
+    fichier = os.path.realpath(os.path.join(racine, chemin or f"{fid}.pdf"))
+    if not fichier.startswith(racine + os.sep) or not os.path.isfile(fichier):
+        raise HTTPException(404, "Fichier introuvable")
+    return FileResponse(fichier, media_type="application/pdf", filename=nom or f"{fid}.pdf",
+                        content_disposition_type="inline")

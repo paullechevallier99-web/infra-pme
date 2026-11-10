@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bibliothèque des factures · Anonyme Expertise</title>
+<style>
+  :root {
+    --fond: #FAF8F3; --carte: #FFFFFF; --encre: #12223A; --doux: #5C6B7D; --trait: #E3DED2;
+    --vert: #0F766E; --vert-l: #E2F1EE; --ambre: #C2701F; --ambre-l: #FCEEDC; --rouge: #B42318;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fond: #0B1626; --carte: #13243B; --encre: #E4EAF2; --doux: #8FA3BC; --trait: #22385A;
+      --vert: #4FC3B4; --vert-l: #12343A; --ambre: #F2B36D; --ambre-l: #3A2C1A; --rouge: #F28B82;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--fond);
+         color: var(--encre); font-size: 15px; line-height: 1.45; }
+  header { display: flex; align-items: center; gap: 14px; padding: 18px 28px; border-bottom: 1px solid var(--trait);
+           background: var(--carte); position: sticky; top: 0; z-index: 2; }
+  .logo { width: 38px; height: 38px; border-radius: 9px; background: var(--vert); color: #fff; display: grid;
+          place-items: center; font-weight: 800; }
+  header h1 { font-size: 19px; margin: 0; letter-spacing: -0.3px; }
+  header p { margin: 0; color: var(--doux); font-size: 13px; }
+  header .actions { margin-left: auto; display: flex; gap: 10px; }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 28px 60px; }
+  button { font: inherit; border: 1px solid var(--trait); background: var(--carte); color: var(--encre);
+           padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+  button:hover { filter: brightness(0.96); }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .kpi { background: var(--carte); border: 1px solid var(--trait); border-top: 3px solid var(--vert); border-radius: 10px;
+         padding: 14px 16px; }
+  .kpi.ambre { border-top-color: var(--ambre); }
+  .kpi b { display: block; font-size: 26px; letter-spacing: -0.5px; }
+  .kpi span { color: var(--doux); font-size: 13px; }
+  .filtres { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px; }
+  select, input[type=search] { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--trait);
+           background: var(--carte); color: var(--encre); }
+  input[type=search] { flex: 1; min-width: 200px; }
+  #depot { display: block; cursor: pointer; border: 2px dashed var(--trait); border-radius: 12px; padding: 18px;
+           text-align: center; color: var(--doux); margin-bottom: 22px; background: var(--carte); }
+  #depot.survol { border-color: var(--vert); background: var(--vert-l); color: var(--encre); }
+  #depot input { display: none; }
+  .mois { margin-top: 26px; }
+  .mois > h2 { font-size: 17px; margin: 0 0 10px; display: flex; align-items: baseline; gap: 10px; }
+  .mois > h2 small { color: var(--doux); font-weight: 400; font-size: 13px; }
+  details.fournisseur { background: var(--carte); border: 1px solid var(--trait); border-radius: 10px; margin-bottom: 10px; }
+  details.fournisseur > summary { padding: 12px 16px; cursor: pointer; display: flex; gap: 12px; align-items: center;
+           list-style: none; }
+  details.fournisseur > summary::-webkit-details-marker { display: none; }
+  details.fournisseur > summary::before { content: "▸"; color: var(--doux); width: 10px; }
+  details[open].fournisseur > summary::before { content: "▾"; }
+  summary .siret { font-family: ui-monospace, Menlo, Consolas, monospace; font-weight: 600; }
+  summary .total { margin-left: auto; color: var(--doux); font-size: 13px; }
+  .table { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--vert);
+       padding: 8px 16px; border-bottom: 1px solid var(--trait); }
+  td { padding: 9px 16px; border-bottom: 1px solid var(--trait); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  td.num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  .badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+  .badge.classee { background: var(--vert-l); color: var(--vert); }
+  .badge.a_verifier { background: var(--ambre-l); color: var(--ambre); }
+  .badge.pending { background: var(--trait); color: var(--doux); }
+  .fichier { color: var(--doux); font-size: 13px; }
+  .lien { color: var(--vert); font-weight: 600; text-decoration: none; margin-right: 10px; }
+  .lien.secondaire { color: var(--ambre); background: none; border: none; padding: 0; cursor: pointer; font: inherit; font-weight: 600; }
+  .verif { border-left: 4px solid var(--ambre); }
+  .vide { text-align: center; color: var(--doux); padding: 40px; }
+  #message { position: fixed; bottom: 20px; right: 20px; background: var(--encre); color: var(--fond); padding: 10px 16px;
+             border-radius: 8px; opacity: 0; transition: opacity .2s; }
+  #message.visible { opacity: 1; }
+  @media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, 1fr); } header { flex-wrap: wrap; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">ip</div>
+  <div><h1>Bibliothèque des factures</h1><p>Anonyme Expertise · classées par mois et par fournisseur</p></div>
+  <div class="actions"><button id="rafraichir">Actualiser</button></div>
+</header>
+<main>
+  <section class="kpis">
+    <div class="kpi"><b id="k-total">–</b><span>factures affichées</span></div>
+    <div class="kpi"><b id="k-classees">–</b><span>classées automatiquement</span></div>
+    <div class="kpi ambre"><b id="k-verifier">–</b><span>à vérifier</span></div>
+    <div class="kpi"><b id="k-montant">–</b><span>montant TTC classé</span></div>
+  </section>
+
+  <label id="depot">
+    <input type="file" id="fichiers" accept="application/pdf" multiple>
+    <strong>Déposer des factures</strong> — glissez des PDF ici, ou cliquez pour les choisir (10 Mo maximum)
+  </label>
+
+  <section class="filtres">
+    <select id="f-mois"><option value="">Tous les mois</option></select>
+    <select id="f-siret"><option value="">Tous les fournisseurs</option></select>
+    <select id="f-classement">
+      <option value="">Tous les états</option>
+      <option value="classee">Classées</option>
+      <option value="a_verifier">À vérifier</option>
+    </select>
+    <input type="search" id="f-texte" placeholder="Rechercher un numéro, un nom de fichier, un montant…">
+  </section>
+
+  <div id="liste"><p class="vide">Chargement…</p></div>
+</main>
+<div id="message"></div>
+
+<script>
+const euros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
+const nomMois = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" });
+let factures = [];
+
+function el(tag, attrs = {}, ...enfants) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v);
+  }
+  for (const c of enfants) e.append(c instanceof Node ? c : document.createTextNode(c ?? ""));
+  return e;
+}
+
+function message(texte) {
+  const m = document.getElementById("message");
+  m.textContent = texte; m.classList.add("visible");
+  setTimeout(() => m.classList.remove("visible"), 3000);
+}
+
+function siretLisible(s) { return s ? `${s.slice(0, 3)} ${s.slice(3, 6)} ${s.slice(6, 9)} ${s.slice(9)}` : ""; }
+function cleMois(f) { return f.date_facture ? f.date_facture.slice(0, 7) : null; }
+function libelleMois(cle) {
+  const [a, m] = cle.split("-").map(Number);
+  const t = nomMois.format(new Date(a, m - 1, 1));
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+function dateFr(d) { return d ? d.split("-").reverse().join("/") : "—"; }
+function etat(f) { return f.status === "pending" ? "pending" : (f.classement || "a_verifier"); }
+function libelleEtat(e) { return { classee: "Classée", a_verifier: "À vérifier", pending: "En cours" }[e]; }
+
+async function charger() {
+  const r = await fetch("factures?limit=200", { credentials: "same-origin" });
+  if (!r.ok) { document.getElementById("liste").replaceChildren(el("p", { class: "vide" }, `Erreur ${r.status}`)); return; }
+  factures = await r.json();
+  remplirFiltres();
+  afficher();
+}
+
+function remplirFiltres() {
+  const garder = (id, valeurs, libelle) => {
+    const s = document.getElementById(id), courant = s.value;
+    s.replaceChildren(s.options[0]);
+    for (const v of valeurs) s.append(el("option", { value: v }, libelle(v)));
+    s.value = valeurs.includes(courant) ? courant : "";
+  };
+  garder("f-mois", [...new Set(factures.map(cleMois).filter(Boolean))].sort().reverse(), libelleMois);
+  garder("f-siret", [...new Set(factures.map(f => f.siret).filter(Boolean))].sort(), siretLisible);
+}
+
+function filtrees() {
+  const mois = document.getElementById("f-mois").value, siret = document.getElementById("f-siret").value;
+  const cl = document.getElementById("f-classement").value, txt = document.getElementById("f-texte").value.trim().toLowerCase();
+  return factures.filter(f =>
+    (!mois || cleMois(f) === mois) && (!siret || f.siret === siret) && (!cl || etat(f) === cl) &&
+    (!txt || [f.numero, f.filename, f.montant_ttc, f.siret].some(v => String(v ?? "").toLowerCase().includes(txt))));
+}
+
+function ligne(f) {
+  const actions = el("td", {}, el("a", { class: "lien", href: `factures/${f.id}/pdf`, target: "_blank", rel: "noopener" }, "Ouvrir"));
+  if (etat(f) !== "classee") actions.append(el("button", { class: "lien secondaire", onclick: () => reanalyser(f.id) }, "Réanalyser"));
+  return el("tr", {},
+    el("td", {}, el("strong", {}, f.numero || "—"), el("div", { class: "fichier" }, f.filename)),
+    el("td", {}, dateFr(f.date_facture)),
+    el("td", { class: "num" }, f.montant_ttc != null ? euros.format(f.montant_ttc) : "—"),
+    el("td", {}, el("span", { class: `badge ${etat(f)}` }, libelleEtat(etat(f)))),
+    actions);
+}
+
+function tableau(liste) {
+  return el("div", { class: "table" }, el("table", {},
+    el("thead", {}, el("tr", {}, ...["Facture", "Date", "Montant TTC", "État", ""].map(t => el("th", {}, t)))),
+    el("tbody", {}, ...liste.map(ligne))));
+}
+
+function afficher() {
+  const liste = filtrees();
+  const classees = liste.filter(f => etat(f) === "classee"), aVerifier = liste.filter(f => etat(f) !== "classee");
+  document.getElementById("k-total").textContent = liste.length;
+  document.getElementById("k-classees").textContent = classees.length;
+  document.getElementById("k-verifier").textContent = aVerifier.length;
+  document.getElementById("k-montant").textContent = euros.format(classees.reduce((s, f) => s + (f.montant_ttc || 0), 0));
+
+  const zone = document.getElementById("liste");
+  if (!liste.length) { zone.replaceChildren(el("p", { class: "vide" }, "Aucune facture ne correspond à ces filtres.")); return; }
+  const blocs = [];
+  if (aVerifier.length) {
+    blocs.push(el("section", { class: "mois" }, el("h2", {}, "À vérifier", el("small", {}, `${aVerifier.length} facture(s) que l'analyse n'a pas pu classer`)),
+      el("details", { class: "fournisseur verif", open: "" }, el("summary", {}, "Factures sans SIRET, date ou montant lisible"), tableau(aVerifier))));
+  }
+  const parMois = {};
+  for (const f of classees) (parMois[cleMois(f)] ??= {})[f.siret] ??= [], parMois[cleMois(f)][f.siret].push(f);
+  for (const mois of Object.keys(parMois).sort().reverse()) {
+    const fournisseurs = parMois[mois], toutes = Object.values(fournisseurs).flat();
+    const section = el("section", { class: "mois" }, el("h2", {}, libelleMois(mois),
+      el("small", {}, `${toutes.length} facture(s) · ${euros.format(toutes.reduce((s, f) => s + f.montant_ttc, 0))}`)));
+    for (const siret of Object.keys(fournisseurs).sort()) {
+      const lot = fournisseurs[siret];
+      section.append(el("details", { class: "fournisseur" },
+        el("summary", {}, el("span", { class: "siret" }, siretLisible(siret)), `${lot.length} facture(s)`,
+          el("span", { class: "total" }, euros.format(lot.reduce((s, f) => s + f.montant_ttc, 0)))),
+        tableau(lot)));
+    }
+    blocs.push(section);
+  }
+  zone.replaceChildren(...blocs);
+}
+
+async function deposer(fichiers) {
+  let ok = 0;
+  for (const fichier of fichiers) {
+    const donnees = new FormData(); donnees.append("file", fichier);
+    const r = await fetch("factures", { method: "POST", body: donnees, credentials: "same-origin" });
+    if (r.ok) ok++; else message(`${fichier.name} refusé (${r.status})`);
+  }
+  if (ok) { message(`${ok} facture(s) déposée(s), classement en cours…`); setTimeout(charger, 3000); }
+}
+
+async function reanalyser(id) {
+  const r = await fetch(`factures/${id}/reanalyser`, { method: "POST", credentials: "same-origin" });
+  message(r.ok ? "Facture remise en analyse…" : `Erreur ${r.status}`);
+  if (r.ok) setTimeout(charger, 3000);
+}
+
+const depot = document.getElementById("depot");
+document.getElementById("fichiers").addEventListener("change", e => deposer(e.target.files));
+depot.addEventListener("dragover", e => { e.preventDefault(); depot.classList.add("survol"); });
+depot.addEventListener("dragleave", () => depot.classList.remove("survol"));
+depot.addEventListener("drop", e => { e.preventDefault(); depot.classList.remove("survol"); deposer(e.dataTransfer.files); });
+for (const id of ["f-mois", "f-siret", "f-classement"]) document.getElementById(id).addEventListener("change", afficher);
+document.getElementById("f-texte").addEventListener("input", afficher);
+document.getElementById("rafraichir").addEventListener("click", charger);
+charger();
+</script>
+</body>
+</html>
