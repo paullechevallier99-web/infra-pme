@@ -1,7 +1,6 @@
-# Valeurs d'exemple : à remplacer par celles de docs/environnement-ecole.md
 proxmox_endpoint = "https://172.31.114.1:8006/"
-node_name        = "pve-3"
-pool_id          = "paul.l"
+node_name        = "pve-5"
+pool_id          = "P.L"
 template_id      = 120
 datastore_id     = "local-lvm"
 bridge           = "vmbr1"

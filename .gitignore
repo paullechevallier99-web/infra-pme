@@ -14,3 +14,4 @@ pki/*.csr
 *.swp
 *.pdf
 *.save
+terraform/ecole.auto.tfvars
