@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   dockerfile:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - name: Vérifier le Dockerfile
@@ -19,7 +19,7 @@ jobs:
 
   image:
     needs: dockerfile
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -42,7 +42,7 @@ jobs:
 
   infrastructure:
     name: Analyse de l'infrastructure
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
@@ -53,7 +53,7 @@ jobs:
           python-version: "3.12"
 
       - name: Installer les outils d'analyse
-        run: pip install ansible-core ansible-lint yamllint
+        run: pip install -r requirements-dev.txt
 
       - name: Installer les collections Ansible
         run: ansible-galaxy collection install -r ansible/requirements.yml
