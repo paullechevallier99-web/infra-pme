@@ -39,3 +39,27 @@
     name: docker
     state: started
     enabled: true
+
+- name: Filtrage des ports publiés par Docker
+  when: docker_user_filter | bool
+  block:
+    - name: Déposer le script de filtrage DOCKER-USER
+      ansible.builtin.template:
+        src: docker-user-filter.sh.j2
+        dest: /usr/local/sbin/docker-user-filter.sh
+        mode: "0750"
+      notify: Appliquer le filtrage DOCKER-USER
+
+    - name: Déposer le service systemd du filtrage
+      ansible.builtin.copy:
+        src: docker-user-filter.service
+        dest: /etc/systemd/system/docker-user-filter.service
+        mode: "0644"
+      notify: Appliquer le filtrage DOCKER-USER
+
+    - name: Activer le filtrage DOCKER-USER au démarrage
+      ansible.builtin.systemd_service:
+        name: docker-user-filter.service
+        enabled: true
+        state: started
+        daemon_reload: true

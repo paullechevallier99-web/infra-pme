@@ -1,2 +1,10 @@
 common_firewall_rules:
   - { port: "9100", src: "{{ ips.obs }}" }  # node_exporter
+vaultwarden_signups_allowed: true
+docker_user_filter: true
+docker_user_allowed:
+  - { port: 8000, src: "{{ ips.edge }}", comment: "API via Traefik" }
+  - { port: 8000, src: "{{ ips.obs }}", comment: "métriques de l'API" }
+  - { port: 8081, src: "{{ ips.edge }}", comment: "Vaultwarden via Traefik" }
+  - { port: 9200, src: "{{ ips.obs }}", comment: "métriques du worker" }
+  - { port: 8080, src: "{{ ips.obs }}", comment: "cAdvisor" }

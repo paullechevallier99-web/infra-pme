@@ -1,0 +1,14 @@
+[Unit]
+Description=Filtrage des ports publiés par Docker (chaîne DOCKER-USER)
+After=docker.service
+Requires=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/docker-user-filter.sh start
+ExecStop=/usr/local/sbin/docker-user-filter.sh stop
+
+[Install]
+WantedBy=multi-user.target
