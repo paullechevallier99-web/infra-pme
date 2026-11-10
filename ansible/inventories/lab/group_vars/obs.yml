@@ -5,3 +5,9 @@ common_firewall_rules:
   - { port: "3000", src: "{{ ips.edge }}" }                        # Grafana via Traefik
   - { port: "9090", src: "{{ admin_ip }}" }                        # Prometheus depuis admin
   - { port: "9100", src: "{{ observability_docker_subnet }}" }     # node_exporter
+
+docker_user_filter: true
+docker_user_allowed:
+  - { port: 9090, src: "{{ admin_ip }}", comment: "Prometheus depuis la VM admin" }
+  - { port: 3000, src: "{{ ips.edge }}", comment: "Grafana via Traefik" }
+  - { port: 3100, src: "{{ vm_network }}", comment: "Loki : journaux des VM" }
