@@ -12,6 +12,18 @@ http:
         stsSeconds: 31536000
         contentTypeNosniff: true
         referrerPolicy: no-referrer
+    factures-auth:
+      basicAuth:
+        realm: "Factures Anonyme Expertise"
+        users:
+          - "{{ vault_factures_basicauth }}"
+    factures-ratelimit:
+      rateLimit:
+        average: 10
+        burst: 20
+    factures-taille:
+      buffering:
+        maxRequestBodyBytes: 10485760
 
   routers:
     vault:
@@ -24,8 +36,15 @@ http:
       rule: Host(`factures.{{ domain }}`)
       entryPoints: [websecure]
       service: factures
-      middlewares: [secure-headers]
+      middlewares: [secure-headers, factures-ratelimit, factures-taille, factures-auth]
       tls: {}
+    factures-healthz:
+      rule: Host(`factures.{{ domain }}`) && Path(`/healthz`)
+      priority: 100
+      entryPoints: [websecure]
+      service: factures
+      middlewares: [secure-headers]
+      tls: {}    
     grafana:
       rule: Host(`grafana.{{ domain }}`)
       entryPoints: [websecure]
