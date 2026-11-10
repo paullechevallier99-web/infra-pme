@@ -69,3 +69,23 @@ groups:
         labels: { severity: warning }
         annotations:
           summary: "Plus de 50 factures en attente depuis 10 minutes"
+      - alert: ClassementDegrade
+        expr: >
+          sum(increase(factures_classement_total{resultat="a_verifier"}[1h]))
+          / sum(increase(factures_classement_total[1h])) > 0.5
+          and sum(increase(factures_classement_total[1h])) >= 5
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "Plus de la moitié des factures de la dernière heure sont à vérifier"
+          description: "Le classement automatique se dégrade : nouveau modèle de facture, PDF scannés, ou régression de l'extraction."
+      - alert: ClassementDegrade
+        expr: >
+          sum(increase(factures_classement_total{resultat="a_verifier"}[1h]))
+          / sum(increase(factures_classement_total[1h])) > 0.5
+          and sum(increase(factures_classement_total[1h])) >= 5
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "Plus de la moitié des factures de la dernière heure sont à vérifier"
+          description: "Nouveau modèle de facture, PDF scannés, ou régression de l'extraction."
