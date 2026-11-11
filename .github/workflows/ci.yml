@@ -93,7 +93,7 @@ jobs:
       - name: Installer Terraform
         uses: hashicorp/setup-terraform@v4
         with:
-          terraform_version: "1.17.1"
+          terraform_version: "v1.17.2"
 
       - name: Vérifier la mise en forme de Terraform
         working-directory: terraform
