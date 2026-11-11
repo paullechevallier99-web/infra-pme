@@ -11,7 +11,7 @@ alertmanager_version: "v0.34.2"
 # renovate: datasource=docker depName=prom/blackbox-exporter
 blackbox_version: "v0.29.1"
 # renovate: datasource=docker depName=grafana/grafana
-grafana_version: "13.3.0"
+grafana_version: "13.3.1"
 # renovate: datasource=docker depName=grafana/loki
 loki_version: "3.7.9"
 # renovate: datasource=docker depName=grafana/alloy
