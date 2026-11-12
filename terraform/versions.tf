@@ -4,7 +4,7 @@ terraform {
   required_providers {
     proxmox = {
       source  = "bpg/proxmox"
-      version = "~> 0.121" # remplacer par la version trouvée à l'étape 1
+      version = "~> 0.122" # remplacer par la version trouvée à l'étape 1
     }
   }
 }
