@@ -14,4 +14,4 @@ ips:
   obs: 172.31.19.4
   backup: 172.31.19.5
 
-jury_enabled: false
+jury_enabled: true
